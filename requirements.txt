@@ -1,0 +1,11 @@
+flask
+flask-sqlalchemy
+flask-login
+werkzeug
+requests
+pandas
+numpy
+scikit-learn
+joblib
+tensorflow
+xgboost

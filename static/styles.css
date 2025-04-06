@@ -1,0 +1,575 @@
+/* static/styles.css */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 600px;
+    text-align: center;
+}
+
+.ticket-container {
+    border: 2px solid #007BFF;
+    background-color: #f0f8ff;
+}
+
+h2, h3 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+select {
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+label {
+    text-align: left;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+input[type="text"],
+input[type="password"] {
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+button {
+    padding: 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.clear-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+.clear-button:hover {
+    background-color: #c82333;
+}
+
+a {
+    color: #007BFF;
+    text-decoration: none;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.flash-messages {
+    margin: 20px auto;
+    max-width: 600px;
+}
+
+.flash-success {
+    color: #155724;
+    background-color: #28a745; /* Vibrant green */
+    border: 1px solid #218838;
+    padding: 10px 30px 10px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.flash-error {
+    color: #721c24;
+    background-color: #dc3545; /* Vibrant red */
+    border: 1px solid #c82333;
+    padding: 10px 30px 10px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.flash-warning {
+    color: #856404;
+    background-color: #ffc107; /* Vibrant yellow */
+    border: 1px solid #e0a800;
+    padding: 10px 30px 10px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.close-flash {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 20px;
+    color: #fff; /* White close button for better contrast */
+}
+
+.close-flash:hover {
+    color: #ccc; /* Light gray on hover */
+}
+
+.mark-all-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-bottom: 10px;
+    float: right;
+}
+
+.mark-all-btn:hover {
+    background-color: #218838;
+}
+.matches-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+/* Add this to your existing styles.css */
+.match-bubble {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: pointer; /* Indicate clickability */
+    transition: background-color 0.2s ease; /* Smooth transition */
+}
+
+.match-bubble.selected {
+    background-color: #d9e6f2; /* Darker shade when selected */
+}
+.match-bubble:hover {
+    transform: scale(1.05); /* Slightly larger on hover */
+}
+
+.match-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.team {
+    font-weight: bold;
+    color: #333;
+    flex: 1;
+    text-align: center;
+    padding: 0 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+.loading {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+}
+
+.home-team {
+    text-align: left;
+}
+
+.away-team {
+    text-align: right;
+}
+
+.match-center {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    min-height: 60px;
+}
+
+.match-date {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.vs-wrapper {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    text-align: center;
+}
+
+.vs {
+    font-size: 16px;
+    font-weight: bold;
+    color: #777;
+}
+
+.match-prediction {
+    font-size: 14px;
+    color: #007BFF;
+    text-align: center;
+}
+
+.selected-matches {
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #e6f3ff;
+    border: 1px solid #b3d7ff;
+    border-radius: 8px;
+}
+
+.selected-match {
+    padding: 5px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.ticket-matches {
+    margin: 20px 0;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+.ticket-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+.ticket-match {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px dashed #ddd;
+}
+
+.ticket-match:last-child {
+    border-bottom: none;
+}
+
+.ticket-match .team {
+    flex: 1;
+    text-align: left;
+}
+
+.ticket-match .vs {
+    flex: 0 0 auto;
+    margin: 0 10px;
+}
+
+.ticket-match .match-date {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+}
+
+.ticket-match .match-league {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+}
+
+.ticket-match .match-prediction {
+    flex: 1;
+    text-align: right;
+}
+
+.button {
+    padding: 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+.loading {
+    color: #007BFF;
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.profile-link {
+    font-weight: bold;
+    color: #007BFF;
+}
+
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.notification-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.notification-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 14px;
+    transition: transform 0.2s ease; /* Smooth scaling transition */
+}
+
+.notification-item.unread {
+    background-color: #f0f8ff; /* Light blue for unread */
+    cursor: pointer; /* Indicate clickability */
+}
+
+.notification-item.unread:hover {
+    transform: scale(1.05); /* Slightly larger on hover */
+}
+
+.notification-item.read {
+    background-color: #fff; /* White for read */
+    cursor: default; /* No pointer for read items */
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-time {
+    font-size: 12px;
+    color: #777;
+}
+
+.match-like {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.like-btn {
+    background-color: #f9f9f9; /* Light gray background for better contrast */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333; /* Darker text color for visibility */
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.like-btn.liked {
+    background-color: #ffcccc; /* Light red when liked */
+    border-color: #ff9999;
+    color: #ff3333; /* Bright red text when liked */
+}
+
+.like-btn:hover {
+    background-color: #e0e0e0; /* Slightly darker gray on hover when not liked */
+}
+
+.like-btn.liked:hover {
+    background-color: #ff9999; /* Darker red on hover when liked */
+}
+.shared-tickets {
+    margin-top: 20px;
+}
+
+.shared-ticket {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+}
+
+.shared-ticket p {
+    margin: 5px 0;
+}
+.search-form {
+    margin: 20px 0;
+}
+
+.search-form input[type="text"] {
+    padding: 8px;
+    width: 200px;
+    margin-right: 10px;
+}
+
+.search-form button {
+    padding: 8px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.search-form button:hover {
+    background-color: #45a049;
+}
+
+.search-results {
+    margin-top: 20px;
+}
+
+.search-results ul {
+    list-style: none;
+    padding: 0;
+}
+
+.search-results li {
+    margin: 10px 0;
+}
+
+.search-results a {
+    text-decoration: none;
+    color: #007BFF;
+}
+
+.search-results a:hover {
+    text-decoration: underline;
+}
+
+.search-results button {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.search-results button:hover {
+    background-color: #45a049;
+}
+
+@media (max-width: 600px) {
+    .container {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .match-layout {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .team {
+        text-align: left !important;
+        padding: 5px 0;
+    }
+
+    .match-center {
+        min-height: 40px;
+        margin: 10px 0;
+    }
+
+    .ticket-match {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+
+    .ticket-match .team,
+    .ticket-match .vs,
+    .ticket-match .match-date,
+    .ticket-match .match-league,
+    .ticket-match .match-prediction {
+        text-align: left !important;
+        flex: none;
+        margin: 2px 0;
+    }
+}

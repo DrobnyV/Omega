@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="nav-bar">
+            <h2>Welcome, {{ username }}!</h2>
+            <div class="nav-links">
+                <a href="{{ url_for('profile', user_id=current_user.id) }}" class="profile-link">{{ username }}</a>
+                <div class="notification-bell">
+                    <span>🔔</span>
+                    <span class="notification-count" id="notification-count"></span>
+                </div>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+
+        <div class="notifications-dropdown hidden" id="notifications-dropdown">
+            <h4>Notifications</h4>
+            <div id="notifications-list"></div>
+            <button id="mark-all-read" class="mark-all-btn">Mark All Read</button>
+        </div>
+
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-{{ category }}" data-message-id="{{ loop.index }}">
+                            {{ message }}
+                            <span class="close-flash">×</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Add Search Users Section -->
+        <h3>Find Users</h3>
+        <form method="POST" action="{{ url_for('home') }}" class="search-form">
+            <input type="text" name="search_query" placeholder="Search for users" value="{{ request.form.get('search_query', '') }}">
+            <button type="submit">Search</button>
+        </form>
+        {% if searched_users %}
+            <div class="search-results">
+                <h4>Search Results</h4>
+                <ul>
+                    {% for user in searched_users %}
+                        <li>
+                            <a href="{{ url_for('view_profile', user_id=user.id) }}">{{ user.username }}</a>
+                            <form action="{{ url_for('follow_user', user_id=user.id) }}" method="POST" style="display:inline;">
+                                {% if user in current_user.following %}
+                                    <button type="submit">Unfollow</button>
+                                {% else %}
+                                    <button type="submit">Follow</button>
+                                {% endif %}
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <h3>Select a League</h3>
+        <select id="league_id" name="league_id">
+            {% for league in leagues %}
+                <option value="{{ league.id }}" {% if league.id == selected_league_id %}selected{% endif %}>{{ league.name }}</option>
+            {% endfor %}
+        </select>
+        <div class="loading" style="display: none;">Loading...</div>
+        <h3>Upcoming Matches</h3>
+        <div class="matches-container" id="matches-container"></div>
+        <div id="no-matches" class="hidden">No upcoming matches available for this league.</div>
+
+        <h3 class="hidden" id="selected-matches-header">Selected Matches for Ticket</h3>
+        <div class="selected-matches hidden" id="selected-matches"></div>
+        <div class="ticket-actions">
+            <form method="POST" action="{{ url_for('generate_ticket') }}" id="ticket-form" class="action-form">
+                <input type="hidden" name="selected_matches" id="selected-matches-input">
+                <button type="submit" id="generate-ticket-btn" class="hidden">Generate Ticket</button>
+            </form>
+            <button id="clear-selections-btn" class="hidden clear-button">Clear Selections</button>
+        </div>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+
+    <script>
+        const allMatches = {{ matches_by_league | tojson }};
+        const selectedMatches = new Set({{ selected_matches | tojson }});
+        let currentLeagueId = '{{ selected_league_id }}';
+
+        const matchesContainer = document.getElementById('matches-container');
+        const noMatchesDiv = document.getElementById('no-matches');
+        const generateBtn = document.getElementById('generate-ticket-btn');
+        const clearBtn = document.getElementById('clear-selections-btn');
+        const selectedMatchesDiv = document.getElementById('selected-matches');
+        const selectedMatchesHeader = document.getElementById('selected-matches-header');
+        const selectedMatchesInput = document.getElementById('selected-matches-input');
+        const leagueSelect = document.getElementById('league_id');
+        const loading = document.querySelector('.loading');
+        const notificationBell = document.querySelector('.notification-bell');
+        const notificationsDropdown = document.getElementById('notifications-dropdown');
+        const notificationsList = document.getElementById('notifications-list');
+        const notificationCount = document.getElementById('notification-count');
+        const markAllReadBtn = document.getElementById('mark-all-read');
+
+        // Close flash messages
+        document.querySelectorAll('.close-flash').forEach(closeBtn => {
+            closeBtn.addEventListener('click', () => {
+                closeBtn.parentElement.style.display = 'none';
+            });
+        });
+
+        function fetchNotifications() {
+            fetch('/notifications')
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(notifications => {
+                    const unreadCount = notifications.filter(n => !n.read).length;
+                    notificationCount.textContent = unreadCount >= 10 ? '9+' : unreadCount;
+                    notificationCount.style.display = unreadCount ? 'flex' : 'none';
+
+                    notificationsList.innerHTML = notifications.map(n => `
+                        <div class="notification-item ${n.read ? 'read' : 'unread'}" data-id="${n.id}">
+                            ${n.message}
+                            <div class="notification-time">${n.timestamp}</div>
+                        </div>
+                    `).join('');
+
+                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const notificationId = item.dataset.id;
+                            fetch(`/notifications/read/${notificationId}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' }
+                            })
+                            .then(response => {
+                                if (!response.ok) throw new Error('Failed to mark notification as read');
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.success) {
+                                    item.classList.remove('unread');
+                                    item.classList.add('read');
+                                    fetchNotifications();
+                                }
+                            })
+                            .catch(error => console.error('Error marking notification as read:', error));
+                        });
+                    });
+                })
+                .catch(error => console.error('Error fetching notifications:', error));
+        }
+
+        markAllReadBtn.addEventListener('click', () => {
+            fetch('/notifications/read_all', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) fetchNotifications();
+                });
+        });
+
+        notificationBell.addEventListener('click', () => {
+            notificationsDropdown.classList.toggle('hidden');
+            if (!notificationsDropdown.classList.contains('hidden')) fetchNotifications();
+        });
+
+        fetchNotifications();
+        setInterval(fetchNotifications, 30000);
+
+        function renderMatches(leagueId) {
+            matchesContainer.innerHTML = '';
+            const matches = allMatches[leagueId] || [];
+            if (matches.length === 0) {
+                noMatchesDiv.classList.remove('hidden');
+                return;
+            }
+            noMatchesDiv.classList.add('hidden');
+
+            matches.forEach(match => {
+                const div = document.createElement('div');
+                div.className = `match-bubble ${selectedMatches.has(match.id) ? 'selected' : ''}`;
+                div.dataset.matchId = match.id;
+                div.innerHTML = `
+                    <div class="match-layout">
+                        <span class="team home-team">${match.home_team}</span>
+                        <div class="match-center">
+                            <div class="match-date">${match.date}</div>
+                            <div class="vs-wrapper"><div class="vs">vs</div></div>
+                        </div>
+                        <span class="team away-team">${match.away_team}</span>
+                    </div>
+                    <div class="match-prediction">Predicted Winner: <strong>${match.prediction}</strong></div>
+                    <div class="match-like">
+                        <button class="like-btn ${match.user_liked ? 'liked' : ''}" data-match-id="${match.id}">
+                            ❤️ ${match.like_count}
+                        </button>
+                    </div>
+                `;
+                matchesContainer.appendChild(div);
+
+                div.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('like-btn')) return;
+                    const matchId = div.dataset.matchId;
+                    if (selectedMatches.has(matchId)) {
+                        selectedMatches.delete(matchId);
+                        div.classList.remove('selected');
+                    } else {
+                        selectedMatches.add(matchId);
+                        div.classList.add('selected');
+                    }
+                    updateUI();
+                });
+
+                const likeBtn = div.querySelector('.like-btn');
+                likeBtn.addEventListener('click', () => {
+                    fetch('/like_match', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ match_id: match.id })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            match.user_liked = data.liked;
+                            match.like_count += data.liked ? 1 : -1;
+                            likeBtn.classList.toggle('liked', data.liked);
+                            likeBtn.textContent = `❤️ ${match.like_count}`;
+                        }
+                    });
+                });
+            });
+        }
+
+        function updateUI() {
+            const hasSelections = selectedMatches.size > 0;
+            generateBtn.classList.toggle('hidden', !hasSelections);
+            clearBtn.classList.toggle('hidden', !hasSelections);
+            selectedMatchesHeader.classList.toggle('hidden', !hasSelections);
+            selectedMatchesDiv.classList.toggle('hidden', !hasSelections);
+
+            selectedMatchesDiv.innerHTML = '';
+            selectedMatches.forEach(matchId => {
+                for (const leagueId in allMatches) {
+                    const match = allMatches[leagueId].find(m => m.id === matchId);
+                    if (match) {
+                        const leagueName = {{ leagues | tojson }}.find(l => l.id === parseInt(leagueId)).name;
+                        const div = document.createElement('div');
+                        div.className = 'selected-match';
+                        div.textContent = `${match.home_team} vs ${match.away_team} (${match.date}) [${leagueName}] - Predicted Winner: ${match.prediction}`;
+                        selectedMatchesDiv.appendChild(div);
+                        break;
+                    }
+                }
+            });
+
+            selectedMatchesInput.value = JSON.stringify([...selectedMatches]);
+        }
+
+        clearBtn.addEventListener('click', () => {
+            selectedMatches.clear();
+            renderMatches(currentLeagueId);
+            updateUI();
+        });
+
+        leagueSelect.addEventListener('change', () => {
+            currentLeagueId = leagueSelect.value;
+            renderMatches(currentLeagueId);
+            updateUI();
+        });
+
+        renderMatches(currentLeagueId);
+        updateUI();
+
+        document.getElementById('ticket-form').addEventListener('submit', () => {
+            loading.style.display = 'block';
+        });
+    </script>
+</body>
+</html>

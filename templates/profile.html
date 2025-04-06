@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile - {{ username }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>{{ username }}'s Profile</h2>
+        <div class="profile-info">
+            <p><strong>Followers:</strong> {{ user.followers | length }}</p>
+            <p><strong>Following:</strong> {{ user.following | length }}</p>
+            <p><strong>Shared Tickets:</strong> {{ user.shared_tickets }}</p>
+        </div>
+        {% if user != current_user %}
+            <form action="{{ url_for('follow_user', user_id=user.id) }}" method="POST" style="display:inline;">
+                {% if user in current_user.following %}
+                    <button type="submit">Unfollow</button>
+                {% else %}
+                    <button type="submit">Follow</button>
+                {% endif %}
+            </form>
+        {% endif %}
+        <h3>Shared Tickets</h3>
+        <div class="shared-tickets">
+            {% if shared_tickets %}
+                {% for ticket in shared_tickets %}
+                    <div class="shared-ticket">
+                        <p><strong>Shared on:</strong> {{ ticket.share_date.strftime('%B %d, %Y, %I:%M %p UTC') }}</p>
+                        <div class="ticket-matches">
+                            {% for match in ticket.ticket_data.matches %}
+                                <div class="ticket-match">
+                                    <span class="team">{{ match.home_team }}</span>
+                                    <span class="vs">vs</span>
+                                    <span class="team">{{ match.away_team }}</span>
+                                    <span class="match-date">({{ match.date }})</span>
+                                    <span class="match-league">[{% for league in leagues %}{% if league.id == match.league_id %}{{ league.name }}{% endif %}{% endfor %}]</span>
+                                    <span class="match-prediction">Predicted Winner: <strong>{{ match.prediction }}</strong></span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No shared tickets yet.</p>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('home') }}">Back to Home</a>
+    </div>
+</body>
+</html>
