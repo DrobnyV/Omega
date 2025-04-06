@@ -1,6 +1,5 @@
 import os
 import re
-
 import joblib
 import numpy as np
 import pandas as pd
@@ -10,7 +9,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 from datetime import datetime, timedelta
-import random
 import json
 import logging
 
@@ -34,14 +32,14 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
-    favorite_teams = db.Column(db.String(500), default="")  # Comma-separated team names
+    favorite_teams = db.Column(db.String(500), default="")
     followers = db.relationship('User', secondary='follows',
                               primaryjoin='User.id==follows.c.follower_id',
                               secondaryjoin='User.id==follows.c.followed_id',
                               backref='following')
     shared_tickets = db.Column(db.Integer, default=0)
 
-# Add follows table for follower relationships
+
 follows = db.Table('follows',
     db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
@@ -73,7 +71,7 @@ class LastFetch(db.Model):
 class MatchLike(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    match_id = db.Column(db.String(200), nullable=False)  # match_id bude string, protože je to unikátní ID zápasu
+    match_id = db.Column(db.String(200), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='match_likes')
@@ -81,7 +79,7 @@ class MatchLike(db.Model):
 class SharedTicket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    ticket_data = db.Column(db.Text, nullable=False)  # JSON string of the ticket matches
+    ticket_data = db.Column(db.Text, nullable=False)
     share_date = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='shared_tickets_list')
@@ -105,7 +103,7 @@ DEFAULT_TEAM_MAPPINGS = {
 }
 
 
-# Define team matching function
+
 def find_team_match(match_team, stats_teams):
     if pd.isna(match_team):
         return None
@@ -118,38 +116,33 @@ def find_team_match(match_team, stats_teams):
     return None
 
 
-# Precompute team name mappings for efficiency
+
 def generate_team_mappings():
     mappings = {}
     unmapped_teams = set()
-    season = "2024-2025"  # Use only current season
+    season = "2024-2025"
 
-    with app.app_context():  # Ensure DB queries run in app context
+    with app.app_context():
         for league in FREE_TIER_LEAGUES:
             league_id = league['id']
             league_name = league['name']
-            # Get unique team names from stats for this league and season
             stats_teams = team_stats_df[
                 (team_stats_df['League'] == league_name) &
                 (team_stats_df['Season'] == season)
                 ]['Squad'].unique()
 
-            # Get unique team names from cached matches (if available)
             cached_matches = Match.query.filter_by(league_id=league_id).all()
             match_teams = set()
             for m in cached_matches:
                 match_teams.add(m.home_team)
                 match_teams.add(m.away_team)
 
-            # Generate mapping for this league
             temp_mapping = {}
             for match_team in match_teams:
-                # First check default mappings
                 mapped_team = DEFAULT_TEAM_MAPPINGS.get(match_team)
                 if mapped_team:
                     temp_mapping[match_team] = mapped_team
                 else:
-                    # Fall back to regex matching
                     matched_team = find_team_match(match_team, stats_teams)
                     if matched_team:
                         temp_mapping[match_team] = matched_team
@@ -164,25 +157,22 @@ def generate_team_mappings():
     return mappings
 
 
-# Define FREE_TIER_LEAGUES
 FREE_TIER_LEAGUES = [
     {'id': 2021, 'name': 'Premier League'},
     {'id': 2002, 'name': 'Bundesliga'},
     {'id': 2019, 'name': 'Serie A'},
     {'id': 2014, 'name': 'La Liga'},
     {'id': 2015, 'name': 'Ligue 1'},
-    # Add others as needed
 ]
 
-# Initialize TEAM_MAPPINGS within app context at startup
 with app.app_context():
     TEAM_MAPPINGS = generate_team_mappings()
 
 
 def predict_winner(home_team, away_team, league_name=None):
-    season = "2024-2025"  # Use only current season
+    season = "2024-2025"
 
-    # Normalize team names using precomputed mappings
+
     if league_name and league_name in TEAM_MAPPINGS:
         home_team_mapped = TEAM_MAPPINGS[league_name].get(home_team, home_team)
         away_team_mapped = TEAM_MAPPINGS[league_name].get(away_team, away_team)
@@ -190,7 +180,6 @@ def predict_winner(home_team, away_team, league_name=None):
         home_team_mapped = DEFAULT_TEAM_MAPPINGS.get(home_team, home_team)
         away_team_mapped = DEFAULT_TEAM_MAPPINGS.get(away_team, away_team)
 
-    # Fetch stats from team_stats_df for 2024-2025 only
     if league_name:
         home_stats = team_stats_df[
             (team_stats_df['Squad'] == home_team_mapped) &
@@ -219,7 +208,6 @@ def predict_winner(home_team, away_team, league_name=None):
     home_stats = home_stats.iloc[0]
     away_stats = away_stats.iloc[0]
 
-    # Construct feature vector
     features = np.array([[
         home_stats['W'], home_stats['D'], home_stats['L'], home_stats['Pts/MP'],
         home_stats['GD'], home_stats['xGD'],
@@ -327,7 +315,6 @@ def home():
     matches_by_league = fetch_all_matches()
     selected_league_id = request.form.get('league_id', '2021') if request.method == 'POST' else '2021'
 
-    # Handle user search
     search_query = request.form.get('search_query', '').strip()
     searched_users = []
     if search_query:
@@ -361,7 +348,6 @@ def view_profile(user_id):
     return render_template('profile.html', username=user.username, user=user,
                            leagues=FREE_TIER_LEAGUES, shared_tickets=shared_tickets)
 
-# Update the generate_ticket route to pass ticket data for sharing
 @app.route('/generate_ticket', methods=['POST'])
 @login_required
 def generate_ticket():
@@ -385,7 +371,6 @@ def generate_ticket():
     ticket_date = datetime.utcnow().strftime('%B %d, %Y, %I:%M %p UTC')
     session['selected_matches'] = []
     session.modified = True
-    # Removed notification creation here
     db.session.commit()
 
     ticket_data = {
@@ -397,7 +382,7 @@ def generate_ticket():
 
     return render_template('ticket.html', matches=ticket_matches, ticket_date=ticket_date,
                            username=current_user.username, leagues=FREE_TIER_LEAGUES,
-                           ticket_data_json=ticket_data_json)  # Pass ticket_data_json to template
+                           ticket_data_json=ticket_data_json)
 @app.route('/logout')
 @login_required
 def logout():
@@ -408,7 +393,7 @@ def logout():
 
 
 
-# Add this route to your existing app.py
+
 @app.route('/profile')
 @login_required
 def profile():
@@ -434,7 +419,7 @@ def profile():
         logger.debug(f"Shared tickets prepared for template: {shared_tickets}")
         return render_template('profile.html',
                                username=current_user.username,
-                               user=current_user,  # Pass current_user as 'user' for consistency
+                               user=current_user,
                                leagues=FREE_TIER_LEAGUES,
                                shared_tickets=shared_tickets)
     except Exception as e:
@@ -459,7 +444,7 @@ def mark_notification_read(notif_id):
     notification = Notification.query.get_or_404(notif_id)
     if notification.user_id == current_user.id:
         notification.read = True
-        db.session.commit()  # Fixed the typo here
+        db.session.commit()
         return jsonify({'success': True})
     return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
@@ -468,15 +453,12 @@ def mark_notification_read(notif_id):
 @login_required
 def mark_all_notifications_read():
     try:
-        # Fetch unread notifications for the current user
         notifications = Notification.query.filter_by(user_id=current_user.id, read=False).all()
         print(f"Found {len(notifications)} unread notifications for user {current_user.id}")
 
-        # Mark each as read
         for notification in notifications:
             notification.read = True
 
-        # Commit changes to the database
         db.session.commit()
         print("Database commit successful")
 
@@ -495,31 +477,24 @@ def like_match():
 
     if not match_id:
         return jsonify({'success': False, 'error': 'No match ID provided'}), 400
-
-    # Kontrola, zda uživatel již zápas lajkl
     existing_like = MatchLike.query.filter_by(user_id=current_user.id, match_id=match_id).first()
 
     if existing_like:
-        # Pokud lajk existuje, odstraníme ho (toggle)
         db.session.delete(existing_like)
         db.session.commit()
         return jsonify({'success': True, 'liked': False})
     else:
-        # Přidáme nový lajk
         new_like = MatchLike(user_id=current_user.id, match_id=match_id)
         db.session.add(new_like)
         db.session.commit()
         return jsonify({'success': True, 'liked': True})
 
 
-# Přidejte funkci pro získání počtu lajků a stavu lajku pro konkrétní zápas
 def get_match_like_info(match_id, user_id):
     like_count = MatchLike.query.filter_by(match_id=match_id).count()
     user_liked = MatchLike.query.filter_by(user_id=user_id, match_id=match_id).first() is not None
     return {'like_count': like_count, 'user_liked': user_liked}
 
-
-# Modify the share_ticket route to notify followers
 @app.route('/share_ticket', methods=['POST'])
 @login_required
 def share_ticket():
@@ -530,17 +505,14 @@ def share_ticket():
 
     logger.debug(f"Received ticket_data_json: {ticket_data_json}")
 
-    # Increment shared_tickets counter
     current_user.shared_tickets += 1
 
-    # Save the shared ticket
     shared_ticket = SharedTicket(
         user_id=current_user.id,
         ticket_data=ticket_data_json
     )
     db.session.add(shared_ticket)
 
-    # Add notification for the user sharing the ticket
     ticket_data = json.loads(ticket_data_json)
     new_notification = Notification(
         user_id=current_user.id,
@@ -548,7 +520,6 @@ def share_ticket():
     )
     db.session.add(new_notification)
 
-    # Notify followers
     for follower in current_user.followers:
         follower_notification = Notification(
             user_id=follower.id,
@@ -569,14 +540,12 @@ def search_users():
             flash('Please enter a username to search.', 'error')
             return redirect(url_for('search_users'))
 
-        # Search for users (case-insensitive, partial match)
         users = User.query.filter(User.username.ilike(f'%{search_query}%')).filter(User.id != current_user.id).all()
         return render_template('search_users.html', users=users, leagues=FREE_TIER_LEAGUES)
 
     return render_template('search_users.html', users=[], leagues=FREE_TIER_LEAGUES)
 
 
-# Add this route to follow/unfollow users
 @app.route('/follow/<int:user_id>', methods=['POST'])
 @login_required
 def follow_user(user_id):

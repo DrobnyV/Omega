@@ -2,21 +2,20 @@ import requests
 import csv
 import time
 
-# Your API key
 API_KEY = "43746d6bdd3b43de8fc5f083e002bb5f"
 HEADERS = {"X-Auth-Token": API_KEY}
 BASE_URL = "https://api.football-data.org/v4"
 
-# Free-tier leagues (Champions League removed)
+
 LEAGUES = {
-    "PL": "Premier League",  # England
-    "BL1": "Bundesliga",  # Germany
-    "SA": "Serie A",  # Italy
-    "PD": "La Liga",  # Spain
-    "FL1": "Ligue 1"  # France
+    "PL": "Premier League",
+    "BL1": "Bundesliga",
+    "SA": "Serie A",
+    "PD": "La Liga",
+    "FL1": "Ligue 1"
 }
 
-# Seasons to fetch
+
 SEASONS = [2023, 2024]
 
 
@@ -59,10 +58,8 @@ def main():
             print(f"Fetching {name} for {season}...")
             matches = fetch_matches(code, season)
             all_matches.extend(matches)
-            time.sleep(6)  # Avoid rate limit (10 req/min = 1 req/6s)
+            time.sleep(6)
 
-    # Optional: Limit to 1500 matches
-    # all_matches = all_matches[:1500]
 
     save_to_csv(all_matches)
     print(f"Saved {len(all_matches)} matches to matches_2023_2024.csv")

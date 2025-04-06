@@ -10,14 +10,11 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 
-# Load the cleaned dataset
 df = pd.read_csv('../training_data_2023_2024.csv')
 
-# Debug: Check Result values
 print("Unique Result values:")
 print(df['Result'].unique())
 
-# Encode the target variable
 result_mapping = {
     "Draw": 0,
     "Home Win": 1,
@@ -25,15 +22,12 @@ result_mapping = {
 }
 df['Result_Label'] = df['Result'].map(result_mapping)
 
-# Debug: Check encoded labels
 print("Unique Result_Label values:")
 print(df['Result_Label'].unique())
 
-# Check for NaN in labels
 if df['Result_Label'].isna().any():
     raise ValueError("Result_Label contains NaN values. Check Result column mapping.")
 
-# Select features
 feature_cols = [
     'Home_Wins', 'Home_Draws', 'Home_Losses', 'Home_PtsPerMatch', 'Home_GoalDiff', 'Home_xGD',
     'Away_Wins', 'Away_Draws', 'Away_Losses', 'Away_PtsPerMatch', 'Away_GoalDiff', 'Away_xGD'
@@ -41,10 +35,8 @@ feature_cols = [
 X = df[feature_cols].fillna(0)
 y = df['Result_Label']
 
-# Split into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Standardize features
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
@@ -109,7 +101,7 @@ print(classification_report(y_test, svm_pred, target_names=['Draw', 'Home Win', 
 
 
 
-# Updated Summary
+
 print("\nModel Comparison:")
 print(f"Logistic Regression Accuracy: {lr_accuracy:.4f}")
 print(f"Random Forest Accuracy: {rf_accuracy:.4f}")
